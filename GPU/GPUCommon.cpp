@@ -1313,6 +1313,7 @@ void GPUCommon::FlushImm() {
 	}
 
 	SetDrawType(DRAW_PRIM, immPrim_);
+	gstate_c.framebufFormat = gstate.FrameBufFormat();
 
 	gstate_c.UpdateUVScaleOffset();
 
