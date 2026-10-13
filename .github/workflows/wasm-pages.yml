@@ -37,3 +37,21 @@ jobs:
 
       - name: Build release
         run: make wasm-release CMAKE=/usr/bin/cmake WASM_JOBS="-j$(nproc)"
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ppsspp-wasm-release
+          path: |
+            build-wasm-release/PPSSPPSDL.js
+            build-wasm-release/PPSSPPSDL.wasm
+            build-wasm-release/PPSSPPSDL.data
+          if-no-files-found: error
+
+      - name: Upload FFmpeg configure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffmpeg-config-log
+          path: build-ffmpeg-wasm/obj/config.log
+          if-no-files-found: ignore

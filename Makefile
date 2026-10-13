@@ -1,4 +1,4 @@
-.PHONY: wasm-dev-config wasm-dev-build wasm-dev wasm-release-config wasm-release-build wasm-release wasm-config wasm-build config-wasm build-wasm
+.PHONY: ffmpeg-wasm wasm-dev-config wasm-dev-build wasm-dev wasm-release-config wasm-release-build wasm-release wasm-config wasm-build config-wasm build-wasm
 
 WASM_DEV_BUILD_DIR ?= build-wasm
 WASM_RELEASE_BUILD_DIR ?= build-wasm-release
@@ -7,6 +7,9 @@ WASM_MAIN_LOOP_FPS ?= 60
 WASM_INITIAL_MEMORY ?= 536870912
 WASM_MAXIMUM_MEMORY ?= 4294967296
 CMAKE ?= $(or $(wildcard /usr/bin/cmake),cmake)
+# Build FFmpeg (video/ATRAC decoding) for wasm. Set WASM_FFMPEG=OFF to skip.
+WASM_FFMPEG ?= ON
+WASM_FFMPEG_DIR ?= $(CURDIR)/build-ffmpeg-wasm/install
 
 WASM_COMMON_CMAKE_ARGS := \
 	-G Ninja \
@@ -14,7 +17,8 @@ WASM_COMMON_CMAKE_ARGS := \
 	-DUSING_EGL=OFF \
 	-DVULKAN=OFF \
 	-DUSE_NO_MMAP=ON \
-	-DUSE_FFMPEG=OFF \
+	-DUSE_FFMPEG=$(WASM_FFMPEG) \
+	-DFFMPEG_DIR=$(WASM_FFMPEG_DIR) \
 	-DUSE_DISCORD=OFF \
 	-DUSE_MINIUPNPC=OFF \
 	-DUSE_SYSTEM_LIBSDL2=OFF \
@@ -25,7 +29,12 @@ WASM_COMMON_CMAKE_ARGS := \
 	-DWASM_INITIAL_MEMORY=$(WASM_INITIAL_MEMORY) \
 	-DWASM_MAXIMUM_MEMORY=$(WASM_MAXIMUM_MEMORY)
 
-wasm-dev-config:
+ffmpeg-wasm:
+ifeq ($(WASM_FFMPEG),ON)
+	sh scripts/build-ffmpeg-wasm.sh $(WASM_FFMPEG_DIR)
+endif
+
+wasm-dev-config: ffmpeg-wasm
 	emcmake $(CMAKE) -S . -B $(WASM_DEV_BUILD_DIR) $(WASM_COMMON_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DWASM_MAX_PERF=OFF -DWASM_ENABLE_LTO=OFF -DWASM_MALLOC=emmalloc
 
 wasm-dev-build:
@@ -33,7 +42,7 @@ wasm-dev-build:
 
 wasm-dev: wasm-dev-config wasm-dev-build
 
-wasm-release-config:
+wasm-release-config: ffmpeg-wasm
 	emcmake $(CMAKE) -S . -B $(WASM_RELEASE_BUILD_DIR) $(WASM_COMMON_CMAKE_ARGS) -DCMAKE_BUILD_TYPE=Release -DWASM_MAX_PERF=ON -DWASM_ENABLE_LTO=OFF -DWASM_MALLOC=mimalloc
 
 wasm-release-build:
