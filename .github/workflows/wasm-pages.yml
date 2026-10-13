@@ -36,7 +36,19 @@ jobs:
           apt-get install -y --no-install-recommends ninja-build ca-certificates
 
       - name: Build release
-        run: make wasm-release CMAKE=/usr/bin/cmake WASM_JOBS="-j$(nproc)"
+        shell: bash
+        run: |
+          set -o pipefail
+          make wasm-release CMAKE=/usr/bin/cmake WASM_JOBS="-j$(nproc)" 2>&1 | tee build.log
+
+      # Compile errors as annotations, readable from the API without the full log.
+      - name: Report compile errors
+        if: failure()
+        shell: bash
+        run: |
+          grep -E "error:|FAILED:" build.log | sed 's/^[^ ]*\/ppsspp-wasm\///' | head -40 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
 
       - name: Upload web build
         uses: actions/upload-artifact@v4
