@@ -1,0 +1,42 @@
+name: Publish WASM build as release
+
+# Re-publishes the ppsspp-wasm-release artifact of a finished "Build WASM release"
+# run as assets of the `web-build` release. Release assets download from
+# release-assets.githubusercontent.com, which works on networks that block
+# the Azure blob host that artifacts are served from.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID of a successful Build WASM release run"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ppsspp-wasm-release
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: build
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          ls -l build
+          gh release view web-build >/dev/null 2>&1 || \
+            gh release create web-build --target "$GITHUB_SHA" --title "Web build" \
+              --notes "Latest PPSSPP WebAssembly build (PPSSPPSDL.js/.wasm/.data)."
+          gh release upload web-build build/PPSSPPSDL.js build/PPSSPPSDL.wasm build/PPSSPPSDL.data --clobber
+          gh release edit web-build --notes "Latest PPSSPP WebAssembly build (PPSSPPSDL.js/.wasm/.data), from run $RUN_ID."
