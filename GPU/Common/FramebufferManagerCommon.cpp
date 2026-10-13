@@ -1067,7 +1067,7 @@ void FramebufferManagerCommon::ShiftDepthForOffsetRendering(VirtualFramebuffer *
 	}
 	CopyDepthRect(vfb->fbo, 0, 0, temp, 0, 0, w, h, scale, "DepthShiftOut");
 	CopyDepthRect(temp, 0, 0, vfb->fbo, xOffset * scale, 0, w, h, scale, "DepthShiftIn");
-	gpuStats.perFrame.numDepthCopies++;
+	gpuStats.numDepthCopies++;
 	draw_->Invalidate(InvalidationFlags::CACHED_RENDER_STATE);
 	RebindFramebuffer("After ShiftDepthForOffsetRendering");
 	gstate_c.Dirty(DIRTY_ALL_RENDER_STATE);
